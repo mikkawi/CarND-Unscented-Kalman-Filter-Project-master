@@ -35,7 +35,7 @@ UKF::UKF() {
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
   //std_a_ = 30;
-  std_a_ = 2.5;
+  std_a_ = 0.5;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
   //std_yawdd_ = 30;
@@ -122,11 +122,15 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
         //cout << "UKF: Radar measurement" << endl;
         float px = meas_package.raw_measurements_[0] * cos(meas_package.raw_measurements_[1]);
         float py = meas_package.raw_measurements_[0] * sin(meas_package.raw_measurements_[1]);
+        float vx = meas_package.raw_measurements_[2] * cos(meas_package.raw_measurements_[1]);
+        float vy = meas_package.raw_measurements_[2] * sin(meas_package.raw_measurements_[1]);
+        float v_calc = sqrt(vx*vx+vy*vy);
+        //float v_calc = sqrt(vx^2+vy^2);
             if (px == 0 && py == 0) {
             px = epsilon_;
             py = epsilon_;
             }
-        x_ << px, py, 0,0,0;
+        x_ << px, py, v_calc,0,0;
 
       } 
       time_us_ = meas_package.timestamp_;
@@ -141,7 +145,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
 */
 //cout << "Already initialized" << endl;
-float dt = meas_package.timestamp_ - time_us_;
+float dt = (meas_package.timestamp_ - time_us_) / 1000000.0;
 time_us_ = meas_package.timestamp_;
 
 //cout << "dt = " << dt << endl;
