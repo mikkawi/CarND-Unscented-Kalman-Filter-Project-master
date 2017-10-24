@@ -35,7 +35,7 @@ UKF::UKF() {
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
   //std_a_ = 30;
-  std_a_ = 0.5;
+  std_a_ = 3;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
   //std_yawdd_ = 30;
@@ -217,8 +217,8 @@ void UKF::PredictRadarMeasurement(MatrixXd Xsig_pred, VectorXd* z_pred_out, Matr
   S.fill(0);
   MatrixXd prod;
   for(int i=0;i<n_sigma_;i++) {
-    prod = Zsig.col(i) - Zsig.col(0);
-
+    //prod = Zsig.col(i) - Zsig.col(0);
+  	prod = Zsig.col(i) - z_pred;
     // Normalise phi to be between -pi and pi
     prod(1) = Tools::constrainAngle(prod(1));
 
@@ -309,10 +309,11 @@ void UKF::UpdateRadar(MatrixXd Xsig_pred, MatrixXd Zsig, VectorXd z_pred, Matrix
   // Calculate cross correlation matrix
   Tc.fill(0);
   for (int i=0;i<n_sigma_;i++) {
-    MatrixXd first = Xsig_pred.col(i) - Xsig_pred.col(0);
+    //MatrixXd first = Xsig_pred.col(i) - Xsig_pred.col(0);
+    MatrixXd first = Xsig_pred.col(i) - x_;
     first(3) = Tools::constrainAngle(first(3));
 
-    MatrixXd second = Zsig.col(i) - Zsig.col(0);
+    MatrixXd second = Zsig.col(i) - z_pred;
     second(1) = Tools::constrainAngle(second(1));
 
     Tc += weights_(i) * first * second.transpose();
@@ -366,10 +367,11 @@ MatrixXd UKF::AugmentedSigmaPoints(){
   //create augmented sigma points
   Xsig_aug.col(0)  = x_aug;
 
+  double sqrt_lambda_n_aug = sqrt(lambda+n_aug_);
   for (int i = 0; i< n_aug_; i++)
   {
-    Xsig_aug.col(i+1)       = x_aug + sqrt(lambda+n_aug_) * L.col(i);
-    Xsig_aug.col(i+1+n_aug_) = x_aug - sqrt(lambda+n_aug_) * L.col(i);
+    Xsig_aug.col(i+1)       = x_aug + sqrt_lambda_n_aug * L.col(i);
+    Xsig_aug.col(i+1+n_aug_) = x_aug - sqrt_lambda_n_aug * L.col(i);
   }
   return Xsig_aug;
 }
@@ -423,7 +425,7 @@ void UKF::PredictMeanAndCovariance(){
     cout<< "x_ =" << x_ <<endl;
     P_.fill(0);
   	for(int i=0;i<n_sigma_;i++) {
-    	prod = Xsig_pred_.col(i) - Xsig_pred_.col(0);
+    	prod = Xsig_pred_.col(i) - x_;
 
     // Normalise psi to be between -pi and pi
         prod(3) = Tools::constrainAngle(prod(3));
